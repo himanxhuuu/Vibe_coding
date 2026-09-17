@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum Status {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+model User {
+  id              Int             @id @default(autoincrement())
+  name            String
+  email           String          @unique
+  avatarInitials  String
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  assignedTasks   Task[]
+  projectMembers  ProjectMember[]
+
+  @@index([email])
+}
+
+model Project {
+  id          Int             @id @default(autoincrement())
+  name        String
+  description String
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  tasks       Task[]
+  members     ProjectMember[]
+
+  @@index([name])
+}
+
+model Task {
+  id             Int      @id @default(autoincrement())
+  title          String
+  description    String
+  priority       Priority
+  status         Status   @default(TODO)
+  dueDate        DateTime
+  projectId      Int
+  assignedUserId Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  project      Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignedUser User    @relation(fields: [assignedUserId], references: [id], onDelete: Restrict)
+
+  @@index([priority])
+  @@index([status])
+  @@index([projectId])
+  @@index([assignedUserId])
+}
+
+model ProjectMember {
+  projectId Int
+  userId    Int
+  joinedAt  DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, userId])
+  @@index([userId])
+}
